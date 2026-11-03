@@ -629,10 +629,12 @@ def book_drs_stats(ctx, do_finebins=True):
                 "DRS peak value;Peak value;Counts",
                 *get_drs_peak_value_range()),
                 f"{channel_name}_peak_value"))
+            # test-fibre runs (--channels map) get a wider energy range, by label
+            fiber_label = (getattr(ctx, "channel_labels", None) or {}).get(channel_name)
             hists.append(ctx.rdf.Histo1D((
                 f"hist_{channel_name}_energy",
                 "DRS CFD energy integral;CFD energy;Counts",
-                *get_drs_energy_range(chan.is6mm)),
+                *get_drs_energy_range(chan.is6mm, test_fiber_label=fiber_label)),
                 f"{channel_name}_energy"))
             hists.append(ctx.rdf.Histo1D((
                 f"hist_{channel_name}_blrms",
@@ -661,10 +663,11 @@ def book_drs_stats(ctx, do_finebins=True):
                 f"{channel_name}_TS_cfd_mcp"))
             if do_finebins:
                 fb_min, fb_max = get_drs_cfd_finebins_range(chan.isCer)
+                fb_nbins = int(round((fb_max - fb_min) / 0.1))  # 0.1 TS bins
                 hists.append(ctx.rdf.Histo1D((
                     f"hist_{channel_name}_TS_cfd_mcp_finebins",
                     "DRS CFD TS (ref+MCP-corrected);TS_cfd_mcp;Counts",
-                    1000, fb_min, fb_max),
+                    fb_nbins, fb_min, fb_max),
                     f"{channel_name}_TS_cfd_mcp"))
             t_lo, t_hi = get_drs_time_ns_range()
             hists.append(ctx.rdf.Histo1D((
@@ -674,10 +677,11 @@ def book_drs_stats(ctx, do_finebins=True):
                 f"{channel_name}_Time_cfd_mcp"))
             if do_finebins:
                 tfb_lo, tfb_hi = get_drs_time_ns_finebins_range(chan.isCer)
+                tfb_nbins = int(round((tfb_hi - tfb_lo) / 0.02))  # 0.02 ns bins
                 hists.append(ctx.rdf.Histo1D((
                     f"hist_{channel_name}_Time_cfd_mcp_finebins",
                     "DRS CFD time (MCP-corrected);Time_cfd_mcp [ns];Counts",
-                    500, tfb_lo, tfb_hi),
+                    tfb_nbins, tfb_lo, tfb_hi),
                     f"{channel_name}_Time_cfd_mcp"))
 
     # Per-event DRS energy sum by fiber category: var x size (6 histograms).

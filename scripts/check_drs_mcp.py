@@ -9,7 +9,9 @@ Usage
 -----
   python scripts/check_drs_mcp.py                              # default DRS_MCP_SEQUENCES
   python scripts/check_drs_mcp.py --sequences drs_stats drs_cfd_mpv
-  python scripts/check_drs_mcp.py --channels data/channel_maps/testingfibers.json
+  python scripts/check_drs_mcp.py --channels channels/data/testingfibers.json
+  python scripts/check_drs_mcp.py --channels channels/data/testingfibers.json \
+      --mcp-clean --intime          # + in-time vs out-of-time test-fibre pages
 
   --channels FILE  JSON file mapping labels to channel names; only those channels
                    are histogrammed (reference channels are always kept).
@@ -47,14 +49,17 @@ args.jsroot = True  # default to JSROOT for this script; pass --no-jsroot is not
 manager = CaloXAnalysisManager(args)
 
 if args.channels:
-    with open(args.channels) as f:
-        ch_map = json.load(f)
+    from channels.maps.paths import load_channel_map
+    ch_map = load_channel_map(args.channels)
     allowed = set(ch_map.values())
     for board in manager.drsboards.values():
         board.channels = [
             ch for ch in board.channels
             if ch.is_reference or ch.get_channel_name(blsub=False) in allowed
         ]
+    # channel name -> label, so the per-channel plots can show which fibre
+    # each channel is rather than just its board/group/channel numbers
+    manager.channel_labels = {name: label for label, name in ch_map.items()}
     print(f"Channel filter: {len(allowed)} channels from {args.channels}")
 
 manager.prepare(do_fers=False)
@@ -77,6 +82,12 @@ print()
 def main():
     run_hist_phase(sequences, manager)
     run_plot_phase(sequences, manager)
+    if args.intime:
+        # second event loop: needs the timing MPVs that drs_stats.root now holds
+        if not args.channels:
+            raise SystemExit("--intime needs --channels (the test-fibre label map)")
+        from analysis.intime_analysis import run_intime_analysis
+        run_intime_analysis(manager, args)
 
 
 if __name__ == "__main__":

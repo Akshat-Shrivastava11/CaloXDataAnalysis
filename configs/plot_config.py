@@ -146,8 +146,20 @@ def get_drs_plot_ranges(subtractMedian=False, is_amplified=False, is6mm=False, i
     return xmin, xmax
 
 
-def get_drs_energy_range(is6mm=False):
-    """DRS CFD energy integral histogram range: (nbins, xmin, xmax)."""
+def get_drs_energy_range(is6mm=False, test_fiber_label=None):
+    """DRS CFD energy integral histogram range: (nbins, xmin, xmax).
+
+    The default ranges are tuned to resolve single-photoelectron peaks in the
+    calorimeter channels. For test-fibre runs (a label from the --channels map
+    is given) the range is widened so that the noise pedestal of the integral,
+    a few hundred ADC, and the real-hit population are both visible: 25 ADC
+    bins up to 14k for the Cherenkov fibres, 200 ADC bins up to 115k for the
+    scintillating ones, which saturate around 1e5.
+    """
+    if test_fiber_label is not None:
+        if "scint" in test_fiber_label.lower():
+            return (600, -5000, 115000)
+        return (600, -1000, 14000)
     if is6mm:
         return (180, -100, 800)
     return (200, -500, 6000)
@@ -207,18 +219,34 @@ def get_fers_2d_mix_lg_range():
 
 
 def get_drs_cfd_finebins_range(is_cer):
+    """Range [TS] for the fine-binned TS_cfd_mcp histograms.
+
+    The MCP-aligned CFD time sits near 500 TS by construction (+500 offset in
+    variables/drs.py) and drifts by a few tens of TS with detector position, so
+    the window has to be wide enough to hold the whole peak for every run; a
+    peak outside the range is silently clipped and the MPV comes out wrong.
+    Bin width is fixed in analysis/hist_functions.py, not the bin count.
+    """
     #return (410, 450) if is_cer else (420, 490)
-    return (410, 490) if is_cer else (420, 490)
+    #return (410, 490) if is_cer else (420, 490)
+    return (400, 600)
 
 
 def get_drs_time_ns_range():
-    """Broad range [ns] for scalar time_mcp / time_cfd_mcp timing histograms."""
-    return (0, 20)
+    """Broad range [ns] for scalar time_mcp / time_cfd_mcp timing histograms.
+
+    Time_cfd_mcp = (TS_cfd_mcp - group reference) * 0.2 ns, with the references in
+    data/drs/drs_cfd_mpv_at_1500mm_by_group.json (382-400 TS). With the current
+    MCP alignment the in-time peak sits at ~500-520 TS, i.e. 22-29 ns.
+    """
+    return (0, 40)
 
 
 def get_drs_time_ns_finebins_range(is_cer):
-    """Fine-binned range [ns] for time_cfd_mcp_finebins histograms."""
-    return (6.5, 16.5) if is_cer else (7.5, 16.5)
+    """Fine-binned range [ns] for time_cfd_mcp_finebins histograms (0.02 ns bins,
+    set in analysis/hist_functions.py). Holds the 22-29 ns in-time peaks of all
+    channel types; see get_drs_time_ns_range."""
+    return (15.0, 35.0)
 
 
 def get_drs_time_arr_ns_range():
