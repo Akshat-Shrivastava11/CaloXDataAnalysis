@@ -41,14 +41,14 @@ from typing import Iterable
 
 import ROOT
 
-from channels.channel_map import get_mcp_channels
+from channels.channel_map import get_mcp_channels, get_mcp_reference
 from core.analysis_manager import CaloXAnalysisManager
 from utils.data_loader import getRunInfo
 from utils.html_generator import generate_jsroot_html
 from utils.root_setup import setup_root
 from utils.timing import auto_timer
 from utils.utils import get_channel_var
-from variables.drs import MCP_REF, _TS_TO_NS
+from variables.drs import _TS_TO_NS
 
 
 # Keep a stable run-to-colour mapping in every output plot.
@@ -358,10 +358,8 @@ def resolve_mcp_pair(
 
 def mcp_reference_is_live(run: int, columns: set[str]) -> bool:
     """Whether the timing pipeline can apply its configured MCP reference."""
-    return (
-        MCP_REF in get_mcp_channels(run)
-        and f"{MCP_REF}_TS_cfd_ref" in columns
-    )
+    mcp_ref = get_mcp_reference(run)
+    return mcp_ref is not None and f"{mcp_ref}_TS_cfd_ref" in columns
 
 
 def book_run_histograms(
@@ -665,7 +663,7 @@ def main() -> None:
         mcp_reference_applied[run] = mcp_reference_is_live(run, live_columns)
         if not mcp_reference_applied[run]:
             print(
-                f"[WARN] Run {run}: configured MCP reference {MCP_REF} is not live. "
+                f"[WARN] Run {run}: configured MCP reference {get_mcp_reference(run)} is not live. "
                 "*_Time_cfd_mcp is present but has zero MCP correction for this run."
             )
 
@@ -810,7 +808,9 @@ def main() -> None:
         "mcp_clean_selection": not args.no_mcp_clean,
         "particle_selection": args.particle,
         "toa_column": "<mapped DRS branch>_Time_cfd_mcp",
-        "mcp_reference_name": MCP_REF,
+        "mcp_reference_name_by_run": {
+            str(run): get_mcp_reference(run) for run in args.runs
+        },
         "mcp_reference_applied_by_run": {
             str(run): mcp_reference_applied.get(run, False) for run in args.runs
         },

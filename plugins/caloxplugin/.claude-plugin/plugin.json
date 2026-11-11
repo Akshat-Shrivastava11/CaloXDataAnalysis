@@ -1,0 +1,6 @@
+{
+  "name": "caloxplugin",
+  "version": "0.1.0",
+  "description": "CaloX test-beam analysis helpers: Akcalo (Sonnet analysis agent), Donkbin (Opus validator) and skills for DRS timing/velocity calibration, PE calibration, slurm jobs, upstream sync and run conventions.",
+  "author": { "name": "Akshat Shrivastava" }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "calox-tools",
+  "description": "Claude Code tools for CaloX test-beam analysis in CaloXDataAnalysis.",
+  "owner": {
+    "name": "Akshat Shrivastava"
+  },
+  "plugins": [
+    {
+      "name": "caloxplugin",
+      "source": "./plugins/caloxplugin",
+      "description": "CaloX test-beam analysis helpers: Akcalo (Sonnet analysis agent), Donkbin (Opus validator) and skills for timing, PE calibration, slurm jobs and upstream sync."
+    }
+  ]
+}

@@ -37,14 +37,14 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import ROOT
 
-from channels.channel_map import get_mcp_channels
+from channels.channel_map import get_mcp_channels, get_mcp_reference
 from core.analysis_manager import CaloXAnalysisManager
 from utils.data_loader import getRunInfo
 from utils.html_generator import generate_jsroot_html
 from utils.root_setup import setup_root
 from utils.timing import auto_timer
 from utils.utils import get_channel_var, get_hist_mpv
-from variables.drs import MCP_REF, _TS_TO_NS
+from variables.drs import _TS_TO_NS
 
 
 ROOT_COLORS = [
@@ -435,7 +435,8 @@ def resolve_mcp_pair(
 
 
 def mcp_reference_is_live(run: int, columns: set) -> bool:
-    return MCP_REF in get_mcp_channels(run) and "{}_TS_cfd_ref".format(MCP_REF) in columns
+    mcp_ref = get_mcp_reference(run)
+    return mcp_ref is not None and "{}_TS_cfd_ref".format(mcp_ref) in columns
 
 
 def book_run_histograms(
@@ -1413,7 +1414,7 @@ def main() -> None:
         if not mcp_reference_applied[run]:
             print(
                 "[WARN] Run {}: configured MCP reference {} is not live; "
-                "*_Time_cfd_mcp has no MCP shift for this run.".format(run, MCP_REF)
+                "*_Time_cfd_mcp has no MCP shift for this run.".format(run, get_mcp_reference(run))
             )
 
         info = active_timing_channels(manager, requested)
@@ -1724,7 +1725,9 @@ def main() -> None:
             }
             for family, (slope, slope_error, _) in sorted(shared_family_fits.items())
         },
-        "mcp_reference_name": MCP_REF,
+        "mcp_reference_name_by_run": {
+            str(run): get_mcp_reference(run) for run in args.runs
+        },
         "mcp_reference_applied_by_run": {
             str(run): mcp_reference_applied.get(run, False) for run in args.runs
         },
